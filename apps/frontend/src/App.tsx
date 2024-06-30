@@ -11,16 +11,18 @@ import {
   Button,
   HStack,
   Image as ChakraImage, // Rename to avoid conflicts
+  useToast,
 } from "@chakra-ui/react";
 import { SubmissionModal, ConnectWalletButton } from "./components";
 import { lightTheme } from "./theme";
 import mapboxgl from "mapbox-gl";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import ReactDOM from "react-dom";
 import { GeolocateControl } from "mapbox-gl";
 import { config } from "@repo/config-contract";
 import logo from "./assets/logo.png"; // Adjust the path as needed
 import { clauseBuilder, unitsUtils } from "@vechain/sdk-core";
+import Webcam from "react-webcam";
 
 // Define the MapDataPoint interface
 interface MapDataPoint {
@@ -71,6 +73,46 @@ const App = () => {
   mapboxgl.accessToken =
     "pk.eyJ1IjoidGFjb2NhdDQ2NDIiLCJhIjoiY2x5MHU3dGliMHNleTJsb2lheTJqeDdnZiJ9.D0_LMnUu36qWkg6pscuK2Q";
   const mapContainer = useRef<HTMLDivElement | null>(null);
+  const webcamRef = useRef<Webcam>(null);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">(
+    "environment"
+  );
+  const [capturedImage, setCapturedImage] = useState<string>("");
+  const videoConstraints = {
+    width: 480,
+    height: 640,
+    facingMode: facingMode,
+  };
+
+  const toast = useToast();
+
+  const capture = useCallback(() => {
+    const imageSrc = webcamRef.current?.getScreenshot();
+    if (imageSrc) {
+      setCapturedImage(imageSrc);
+      const image = new Image();
+      image.src = imageSrc;
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(image, 0, 0);
+          const base64Image = canvas.toDataURL("image/jpeg");
+          setBase64(base64Image);
+        }
+      };
+
+      // Add toast notification
+      toast({
+        title: "Food drop posted!",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  }, [webcamRef, toast]);
   const map = useRef<mapboxgl.Map | null>(null);
   const [lng, setLng] = useState(-122.431297);
   const [lat, setLat] = useState(37.773972);
@@ -366,12 +408,12 @@ const App = () => {
               <Heading size="md">Post New Location</Heading>
               <Input
                 placeholder="Longitude"
-                value={newLong}
+                value={lng}
                 onChange={(e) => setNewLong(e.target.value)}
               />
               <Input
                 placeholder="Latitude"
-                value={newLat}
+                value={lat}
                 onChange={(e) => setNewLat(e.target.value)}
               />
               <Input
@@ -384,19 +426,31 @@ const App = () => {
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
               />
-              <Input
-                placeholder="Image URL"
-                value={newImage}
-                onChange={(e) => setNewImage(e.target.value)}
-              />
-              <Button colorScheme="blue" onClick={handlePostLocation}>
+              <Box w="200px" mx="auto"> {/* Center the box horizontally */}
+                {capturedImage ? (
+                  <ChakraImage
+                    src={capturedImage}
+                    alt="Captured"
+                    width="100%"
+                    borderRadius="md" // Add rounded corners
+                  />
+                ) : (
+                  <Box borderRadius="md" overflow="hidden"> {/* Add rounded corners */}
+                    <Webcam
+                      audio={false}
+                      ref={webcamRef}
+                      screenshotFormat="image/jpeg"
+                      width="100%"
+                      videoConstraints={videoConstraints}
+                    />
+                  </Box>
+                )}
+              </Box>
+
+              <Button colorScheme="blue" onClick={capture}>
                 Post Location
               </Button>
-              {Boolean(error) && (
-                <Text color="red.500">
-                  Error: {error}
-                </Text>
-              )}
+              {Boolean(error) && <Text color="red.500">Error: {error}</Text>}
               {Boolean(txId) && !error && (
                 <Text color="green.500">
                   Transaction sent successfully! ID: {txId}
