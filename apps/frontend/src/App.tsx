@@ -10,6 +10,7 @@ import {
   Textarea,
   Button,
   HStack,
+  Image as ChakraImage, // Rename to avoid conflicts
 } from "@chakra-ui/react";
 import { SubmissionModal, ConnectWalletButton } from "./components";
 import { lightTheme } from "./theme";
@@ -18,7 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { GeolocateControl } from "mapbox-gl";
 import { config } from "@repo/config-contract";
-
+import logo from "./assets/logo.png"; // Adjust the path as needed
 // Define the MapDataPoint interface
 interface MapDataPoint {
   poster: string;
@@ -285,10 +286,17 @@ const App = () => {
         h="100vh"
         w="100vw"
         display="flex"
+        flexDirection="column" // Add this to stack logo above the content
         alignItems="center"
         justifyContent="center"
         backgroundColor="black"
       >
+        <ChakraImage
+          src="./logo2.png"
+          alt="Logo"
+          width="100px"
+       
+        />
         <Box width="100%" maxWidth="1200px" height="90vh">
           <HStack
             h="100%"
