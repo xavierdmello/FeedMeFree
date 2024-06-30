@@ -138,6 +138,75 @@ const App = () => {
       fetchMapDataPoints();
     }
   }, [account]);
+  // Sample data points in San Francisco
+  const sampleData = [
+    {
+      type: "Feature",
+      properties: {
+        title: "Golden Gate Bridge",
+        description: "Iconic suspension bridge and San Francisco landmark",
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [-122.4783, 37.8199],
+      },
+    },
+    {
+      type: "Feature",
+      properties: {
+        title: "Fisherman's Wharf",
+        description: "Popular waterfront neighborhood and tourist attraction",
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [-122.4169, 37.808],
+      },
+    },
+    {
+      type: "Feature",
+      properties: {
+        title: "Alcatraz Island",
+        description: "Former prison and now a national historic landmark",
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [-122.4229, 37.8267],
+      },
+    },
+  ];
+
+  interface PopupProps {
+    title: string;
+    description: string;
+    onClose: () => void;
+  }
+
+  const Popup: React.FC<PopupProps> = ({ title, description, onClose }) => {
+    return (
+      <Box
+        bg="white"
+        borderRadius="md"
+        boxShadow="lg"
+        p={3}
+        maxWidth="200px"
+        position="relative"
+      >
+        <VStack align="start" spacing={2}>
+          <Heading size="sm">{title}</Heading>
+          <Text fontSize="sm">{description}</Text>
+        </VStack>
+        <Box
+          position="absolute"
+          top={2}
+          right={2}
+          cursor="pointer"
+          onClick={onClose}
+        >
+          ✕
+        </Box>
+      </Box>
+    );
+  };
 
   const fetchMapDataPoints = async () => {
     if (!thor) return;
@@ -166,6 +235,75 @@ const App = () => {
       payable: false,
       stateMutability: "view",
       type: "function",
+    };
+    // Sample data points in San Francisco
+    const sampleData = [
+      {
+        type: "Feature",
+        properties: {
+          title: "Golden Gate Bridge",
+          description: "Iconic suspension bridge and San Francisco landmark",
+        },
+        geometry: {
+          type: "Point",
+          coordinates: [-122.4783, 37.8199],
+        },
+      },
+      {
+        type: "Feature",
+        properties: {
+          title: "Fisherman's Wharf",
+          description: "Popular waterfront neighborhood and tourist attraction",
+        },
+        geometry: {
+          type: "Point",
+          coordinates: [-122.4169, 37.808],
+        },
+      },
+      {
+        type: "Feature",
+        properties: {
+          title: "Alcatraz Island",
+          description: "Former prison and now a national historic landmark",
+        },
+        geometry: {
+          type: "Point",
+          coordinates: [-122.4229, 37.8267],
+        },
+      },
+    ];
+
+    interface PopupProps {
+      title: string;
+      description: string;
+      onClose: () => void;
+    }
+
+    const Popup: React.FC<PopupProps> = ({ title, description, onClose }) => {
+      return (
+        <Box
+          bg="white"
+          borderRadius="md"
+          boxShadow="lg"
+          p={3}
+          maxWidth="200px"
+          position="relative"
+        >
+          <VStack align="start" spacing={2}>
+            <Heading size="sm">{title}</Heading>
+            <Text fontSize="sm">{description}</Text>
+          </VStack>
+          <Box
+            position="absolute"
+            top={2}
+            right={2}
+            cursor="pointer"
+            onClick={onClose}
+          >
+            ✕
+          </Box>
+        </Box>
+      );
     };
 
     const method = thor.account(config.CONTRACT_ADDRESS).method(contractABI);
@@ -248,39 +386,15 @@ const App = () => {
       zoom: zoom,
     });
 
-    // Add geolocate control to the map
-    const geolocate = new GeolocateControl({
-      positionOptions: {
-        enableHighAccuracy: true,
-      },
-      trackUserLocation: true,
-      showUserHeading: true,
-    });
-
-    map.current.addControl(geolocate);
-
     map.current.on("load", () => {
       if (!map.current) return;
 
-      // Trigger geolocation on map load
-      geolocate.trigger();
-
-      // Add the mapDataPoints as a source
+      // Add the sample data as a source
       map.current.addSource("places", {
         type: "geojson",
         data: {
           type: "FeatureCollection",
-          features: mapDataPoints.map((point) => ({
-            type: "Feature",
-            properties: {
-              title: point.name,
-              description: point.description,
-            },
-            geometry: {
-              type: "Point",
-              coordinates: [point.longitude, point.latitude],
-            },
-          })),
+          features: sampleData,
         },
       });
 
@@ -301,18 +415,12 @@ const App = () => {
       map.current.on("click", "places", (e) => {
         if (!e.features || e.features.length === 0) return;
         const feature = e.features[0];
-        const coordinates =
-          feature.geometry.type === "Point"
-            ? feature.geometry.coordinates.slice()
-            : [];
-        const title = feature.properties?.title as string | undefined;
-        const description = feature.properties?.description as
-          | string
-          | undefined;
+        const coordinates = feature.geometry.coordinates.slice();
+        const { title, description } = feature.properties;
 
         setPopupInfo({
-          title: title || "Unknown",
-          description: description || "",
+          title,
+          description,
           onClose: () => setPopupInfo(null),
         });
 
@@ -339,7 +447,7 @@ const App = () => {
         setZoom(Number(map.current.getZoom().toFixed(2)));
       }
     });
-  }, [mapDataPoints]);
+  }, []);
 
   return (
     <ChakraProvider theme={lightTheme}>
@@ -426,7 +534,9 @@ const App = () => {
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
               />
-              <Box w="200px" mx="auto"> {/* Center the box horizontally */}
+              <Box w="200px" mx="auto">
+                {" "}
+                {/* Center the box horizontally */}
                 {capturedImage ? (
                   <ChakraImage
                     src={capturedImage}
@@ -435,7 +545,9 @@ const App = () => {
                     borderRadius="md" // Add rounded corners
                   />
                 ) : (
-                  <Box borderRadius="md" overflow="hidden"> {/* Add rounded corners */}
+                  <Box borderRadius="md" overflow="hidden">
+                    {" "}
+                    {/* Add rounded corners */}
                     <Webcam
                       audio={false}
                       ref={webcamRef}
