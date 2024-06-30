@@ -6,6 +6,10 @@ import {
   VStack,
   Heading,
   Portal,
+  Input,
+  Textarea,
+  Button,
+  HStack,
 } from "@chakra-ui/react";
 import { SubmissionModal, ConnectWalletButton } from "./components";
 import { lightTheme } from "./theme";
@@ -71,6 +75,13 @@ const App = () => {
   const [popupInfo, setPopupInfo] = useState<PopupProps | null>(null);
   const [mapDataPoints, setMapDataPoints] = useState<MapDataPoint[]>([]);
 
+  // New state variables for the input fields
+  const [newLong, setNewLong] = useState("");
+  const [newLat, setNewLat] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newImage, setNewImage] = useState("");
+
   const { account } = useWallet();
   const { thor } = useConnex();
 
@@ -125,6 +136,44 @@ const App = () => {
         timePosted: parseInt(point[7]),
       }));
       setMapDataPoints(points);
+    }
+  };
+
+  const handlePostLocation = async () => {
+    if (!thor || !account) return;
+
+    const contractABI = {
+      inputs: [
+        { name: "_long", type: "int256" },
+        { name: "_lat", type: "int256" },
+        { name: "_name", type: "string" },
+        { name: "_description", type: "string" },
+        { name: "_image", type: "string" },
+      ],
+      name: "postLocation",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    };
+
+    const method = thor.account(config.CONTRACT_ADDRESS).method(contractABI);
+    const clause = method.asClause(
+      Math.round(parseFloat(newLong) * 1e6),
+      Math.round(parseFloat(newLat) * 1e6),
+      newName,
+      newDescription,
+      newImage
+    );
+
+    try {
+      const signingService = thor.vendor.sign("tx", [clause]);
+      const signedTx = await signingService.request();
+      await thor.vendor.sign("tx", [clause]).request();
+      console.log("Transaction sent:", signedTx);
+      // Refresh map data points after successful transaction
+      await fetchMapDataPoints();
+    } catch (error) {
+      console.error("Error posting location:", error);
     }
   };
 
@@ -232,60 +281,115 @@ const App = () => {
 
   return (
     <ChakraProvider theme={lightTheme}>
-      <Box h={"100vh"} p="20px" margin="0" backgroundColor={"black"}>
-        <Box
-          rounded={"20px"}
-          backgroundColor={"white"}
-          w="50%"
-          h="100%"
-          mx="auto"
-          maxWidth={"800px"}
-          position="relative"
-          overflow="hidden"
-        >
-          <Box
-            ref={mapContainer}
-            className="map-container"
-            position="absolute"
-            top="0"
-            bottom="0"
-            left="0"
-            right="0"
-          />
-          <Box
-            position="absolute"
-            top="12px"
-            left="12px"
-            zIndex="1"
-            bg="rgba(35, 55, 75, 0.9)"
-            color="white"
-            p="6px 12px"
-            borderRadius="4px"
-            fontFamily="monospace"
+      <Box
+        h="100vh"
+        w="100vw"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        backgroundColor="black"
+      >
+        <Box width="100%" maxWidth="1200px" height="90vh">
+          <HStack
+            h="100%"
+            p="20px"
+            backgroundColor="black"
+            spacing={4}
+            justifyContent="center"
           >
-            Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
-          </Box>
-          <Box position="absolute" top={4} right={4} zIndex={1}>
-            <ConnectWalletButton />
-          </Box>
+            <Box
+              rounded="20px"
+              backgroundColor="white"
+              w={["100%", "100%", "60%"]}
+              h="100%"
+              position="relative"
+              overflow="hidden"
+            >
+              <Box
+                ref={mapContainer}
+                className="map-container"
+                position="absolute"
+                top="0"
+                bottom="0"
+                left="0"
+                right="0"
+              />
+              <Box
+                position="absolute"
+                top="12px"
+                left="12px"
+                zIndex="1"
+                bg="rgba(35, 55, 75, 0.9)"
+                color="white"
+                p="6px 12px"
+                borderRadius="4px"
+                fontFamily="monospace"
+              >
+                Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
+              </Box>
+              <Box position="absolute" top={4} right={4} zIndex={1}>
+                <ConnectWalletButton />
+              </Box>
+            </Box>
+
+            <VStack
+              rounded="20px"
+              backgroundColor="white"
+              w={["100%", "100%", "40%"]}
+              h="100%"
+              p={4}
+              spacing={4}
+              align="stretch"
+            >
+              <Heading size="md">Post New Location</Heading>
+              <Input
+                placeholder="Longitude"
+                value={newLong}
+                onChange={(e) => setNewLong(e.target.value)}
+              />
+              <Input
+                placeholder="Latitude"
+                value={newLat}
+                onChange={(e) => setNewLat(e.target.value)}
+              />
+              <Input
+                placeholder="Name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+              />
+              <Textarea
+                placeholder="Description"
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+              />
+              <Input
+                placeholder="Image URL"
+                value={newImage}
+                onChange={(e) => setNewImage(e.target.value)}
+              />
+              <Button colorScheme="blue" onClick={handlePostLocation}>
+                Post Location
+              </Button>
+            </VStack>
+          </HStack>
+
+          {popupInfo && (
+            <Portal>
+              <Box
+                position="absolute"
+                top="50%"
+                left="50%"
+                transform="translate(-50%, -100%)"
+                zIndex="tooltip"
+              >
+                <Popup {...popupInfo} />
+              </Box>
+            </Portal>
+          )}
+
+          <SubmissionModal />
         </Box>
       </Box>
-
-      {popupInfo && (
-        <Portal>
-          <Box
-            position="absolute"
-            top="50%"
-            left="50%"
-            transform="translate(-50%, -100%)"
-            zIndex="tooltip"
-          >
-            <Popup {...popupInfo} />
-          </Box>
-        </Portal>
-      )}
-
-      <SubmissionModal />
     </ChakraProvider>
   );
 };
