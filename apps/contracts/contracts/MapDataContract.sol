@@ -3,11 +3,10 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract MapDataContract is ERC20, ERC721 {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
+contract MapDataContract {
+    ERC20 public b3trToken;
+    // ERC721 public mapNFT;
 
     struct MapDataPoint {
         address poster;
@@ -29,9 +28,10 @@ contract MapDataContract is ERC20, ERC721 {
     uint256 public constant TOKENS_TO_VIEW = 2;
     uint256 public constant POSTS_FOR_NFT = 3;
 
-    constructor() ERC20("B3TR", "B3TR") ERC721("MapNFT", "MNF") {
-        // Deploy ERC20 token in constructor
-        _mint(msg.sender, 1000000 * 10**decimals()); // Mint 1,000,000 B3TR tokens to the deployer
+    constructor() {
+        b3trToken = new B3TRToken();
+        // mapNFT = new MapNFT();
+        b3trToken.transfer(msg.sender, 1000000 * 10**b3trToken.decimals()); // Mint 1,000,000 B3TR tokens to the deployer
     }
 
     function postLocation(int256 _long, int256 _lat, string memory _name, string memory _description, string memory _image) public {
@@ -47,23 +47,23 @@ contract MapDataContract is ERC20, ERC721 {
         }));
 
         // Mint 10 tokens to the user for posting
-        _mint(msg.sender, TOKENS_PER_POST * 10**decimals());
+        b3trToken.transfer(msg.sender, TOKENS_PER_POST * 10**b3trToken.decimals());
 
         userPostCount[msg.sender]++;
 
         // Mint NFT if user has 3 postings
-        if (userPostCount[msg.sender] == POSTS_FOR_NFT) {
-            _mintNFT(msg.sender);
-        }
+        // if (userPostCount[msg.sender] == POSTS_FOR_NFT) {
+        //     _mintNFT(msg.sender);
+        // }
     }
 
     function payToView() public {
-        require(balanceOf(msg.sender) >= TOKENS_TO_VIEW * 10**decimals(), "Insufficient tokens to view locations");
+        require(b3trToken.balanceOf(msg.sender) >= TOKENS_TO_VIEW * 10**b3trToken.decimals(), "Insufficient tokens to view locations");
         
         if (!firstTimeUsers[msg.sender]) {
             firstTimeUsers[msg.sender] = true;
         } else {
-            _burn(msg.sender, TOKENS_TO_VIEW * 10**decimals());
+            b3trToken.transferFrom(msg.sender, address(this), TOKENS_TO_VIEW * 10**b3trToken.decimals());
             userPayments[msg.sender] += TOKENS_TO_VIEW;
         }
     }
@@ -73,10 +73,26 @@ contract MapDataContract is ERC20, ERC721 {
         return (mapDataPoints, userPayments[msg.sender]);
     }
 
-    function _mintNFT(address recipient) internal {
-        _tokenIds.increment();
-        uint256 newItemId = _tokenIds.current();
-        _safeMint(recipient, newItemId);
-        _setTokenURI(newItemId, "https://media.istockphoto.com/id/1199025903/vector/congratulations-greeting-card-vector-lettering.jpg?s=612x612&w=0&k=20&c=JBjYOnkRerY0uxBrYAtKccIk6tdiBCuzwClegCucpmw=");
+    // function _mintNFT(address recipient) internal {
+    //     _tokenIds.increment();
+    //     uint256 newItemId = _tokenIds.current();
+    //     mapNFT.safeMint(recipient, newItemId);
+    // }
+}
+
+contract B3TRToken is ERC20 {
+    constructor() ERC20("B3TR", "B3TR") {
+        _mint(msg.sender, 1000000 * 10**decimals());
     }
 }
+
+// contract MapNFT is ERC721 {
+//     using Counters for Counters.Counter;
+//     Counters.Counter private _tokenIds;
+
+//     constructor() ERC721("MapNFT", "MNF") {}
+
+//     function safeMint(address to, uint256 tokenId) public {
+//         _safeMint(to, tokenId);
+//     }
+// }

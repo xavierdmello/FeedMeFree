@@ -4,12 +4,12 @@ import { ethers } from 'hardhat';
 async function deployToken() {
     const [owner] = await ethers.getSigners();
 
-    const token = await ethers.getContractFactory('Token');
+    const token = await ethers.getContractFactory('MapDataContract');
     const tokenInstance = await token.deploy(owner);
 
     const tokenAddress = await tokenInstance.getAddress();
 
-    console.log(`Token deployed to: ${tokenAddress}`);
+    console.log(`mapdatacontract deployed to: ${tokenAddress}`);
 
     updateConfig({
         ...config,
