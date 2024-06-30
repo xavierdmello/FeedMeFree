@@ -20,6 +20,8 @@ import ReactDOM from "react-dom";
 import { GeolocateControl } from "mapbox-gl";
 import { config } from "@repo/config-contract";
 import logo from "./assets/logo.png"; // Adjust the path as needed
+import { clauseBuilder, unitsUtils } from "@vechain/sdk-core";
+
 // Define the MapDataPoint interface
 interface MapDataPoint {
   poster: string;
@@ -76,7 +78,6 @@ const App = () => {
   const [popupInfo, setPopupInfo] = useState<PopupProps | null>(null);
   const [mapDataPoints, setMapDataPoints] = useState<MapDataPoint[]>([]);
 
-
   // New state variables for the input fields
   const [newLong, setNewLong] = useState("");
   const [newLat, setNewLat] = useState("");
@@ -86,6 +87,9 @@ const App = () => {
 
   const { account } = useWallet();
   const { thor } = useConnex();
+
+  const [txId, setTxId] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     if (account) {
@@ -142,40 +146,54 @@ const App = () => {
   };
 
   const handlePostLocation = async () => {
-    if (!thor || !account) return;
-
-    const contractABI = {
-      inputs: [
-        { name: "_long", type: "int256" },
-        { name: "_lat", type: "int256" },
-        { name: "_name", type: "string" },
-        { name: "_description", type: "string" },
-        { name: "_image", type: "string" },
-      ],
-      name: "postLocation",
-      outputs: [],
-      stateMutability: "nonpayable",
-      type: "function",
-    };
-
-    const method = thor.account(config.CONTRACT_ADDRESS).method(contractABI);
-    const clause = method.asClause(
-      Math.round(parseFloat(newLong) * 1e6),
-      Math.round(parseFloat(newLat) * 1e6),
-      newName,
-      newDescription,
-      newImage
-    );
+    if (!thor || !account) {
+      console.error("Thor or account not available");
+      return;
+    }
 
     try {
-      const signingService = thor.vendor.sign("tx", [clause]);
-      const signedTx = await signingService.request();
-      await thor.vendor.sign("tx", [clause]).request();
-      console.log("Transaction sent:", signedTx);
+      setError("");
+
+      const clauses = [
+        clauseBuilder.functionInteraction(
+          config.CONTRACT_ADDRESS,
+          {
+            inputs: [
+              { name: "_long", type: "int256" },
+              { name: "_lat", type: "int256" },
+              { name: "_name", type: "string" },
+              { name: "_description", type: "string" },
+              { name: "_image", type: "string" },
+            ],
+            name: "postLocation",
+            outputs: [],
+            stateMutability: "nonpayable",
+            type: "function",
+          },
+          [
+            Math.round(parseFloat(newLong) * 1e6),
+            Math.round(parseFloat(newLat) * 1e6),
+            newName,
+            newDescription,
+            newImage,
+          ]
+        ),
+      ];
+
+      const tx = thor.vendor.sign("tx", clauses).signer(account);
+
+      const { txid } = await tx.request();
+      setTxId(txid);
+
+      // Wait for the transaction to be confirmed
+      const receipt = await thor.transaction(txid).getReceipt();
+      console.log("Transaction confirmed:", receipt);
+
       // Refresh map data points after successful transaction
       await fetchMapDataPoints();
-    } catch (error) {
-      console.error("Error posting location:", error);
+    } catch (err) {
+      setError(String(err));
+      console.error("Error posting location:", err);
     }
   };
 
@@ -292,12 +310,7 @@ const App = () => {
         justifyContent="center"
         backgroundColor="black"
       >
-        <ChakraImage
-          src="./logo2.png"
-          alt="Logo"
-          width="100px"
-       
-        />
+        <ChakraImage src="./logo2.png" alt="Logo" width="100px" />
         <Box width="100%" maxWidth="1200px" height="90vh">
           <HStack
             h="100%"
@@ -379,6 +392,16 @@ const App = () => {
               <Button colorScheme="blue" onClick={handlePostLocation}>
                 Post Location
               </Button>
+              {Boolean(error) && (
+                <Text color="red.500">
+                  Error: {error}
+                </Text>
+              )}
+              {Boolean(txId) && !error && (
+                <Text color="green.500">
+                  Transaction sent successfully! ID: {txId}
+                </Text>
+              )}
             </VStack>
           </HStack>
 
@@ -406,11 +429,11 @@ const App = () => {
 const AppWrapper = () => {
   return (
     <DAppKitProvider
-      nodeUrl="https://testnet.vechain.org/"
+      usePersistence
+      requireCertificate={false}
       genesis="test"
-      usePersistence={true}
-      logLevel="DEBUG"
-      themeMode="LIGHT"
+      nodeUrl="https://testnet.vechain.org/"
+      logLevel={"DEBUG"}
     >
       <App />
     </DAppKitProvider>
