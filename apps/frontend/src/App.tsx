@@ -144,7 +144,8 @@ const App = () => {
       type: "Feature",
       properties: {
         title: "Free Burritos",
-        description: "50 leftover burritos at the Golden Gate Bridge",
+        description:
+          "50 leftover burritos at the Golden Gate Bridge\n View address: 5 BT3R",
       },
       geometry: {
         type: "Point",
@@ -155,7 +156,8 @@ const App = () => {
       type: "Feature",
       properties: {
         title: "Leftover salads",
-        description: "Leftover salads at Fisherman's Wharf",
+        description:
+          "Leftover salads at Fisherman's Wharf\n View address: 3 BT3R",
       },
       geometry: {
         type: "Point",
@@ -166,7 +168,8 @@ const App = () => {
       type: "Feature",
       properties: {
         title: "Leftover sandwiches",
-        description: "Leftover sandwiches at Alcatraz Island",
+        description:
+          "Leftover sandwiches at Alcatraz Island\n View address: 3 BT3R",
       },
       geometry: {
         type: "Point",
@@ -177,7 +180,8 @@ const App = () => {
       type: "Feature",
       properties: {
         title: "Pizza Leftovers",
-        description: "10 boxes of leftover pizza at Esprit Park",
+        description:
+          "10 boxes of leftover pizza at Esprit Park\n View address: 3 BT3R",
       },
       geometry: {
         type: "Point",
@@ -188,7 +192,8 @@ const App = () => {
       type: "Feature",
       properties: {
         title: "Fruit Basket",
-        description: "Fresh fruit basket at Warm Water Cove Park",
+        description:
+          "Fresh fruit basket at Warm Water Cove Par\n View address: 3 BT3Rk",
       },
       geometry: {
         type: "Point",
@@ -199,7 +204,8 @@ const App = () => {
       type: "Feature",
       properties: {
         title: "Bagel Bonanza",
-        description: "Assorted bagels at Minnesota Street Project",
+        description:
+          "Assorted bagels at Minnesota Street Project\n View address: 3 BT3R",
       },
       geometry: {
         type: "Point",
@@ -210,7 +216,8 @@ const App = () => {
       type: "Feature",
       properties: {
         title: "Veggie Platter",
-        description: "Large vegetable platter at Crane Cove Park",
+        description:
+          "Large vegetable platter at Crane Cove Park\n View address: 3 BT3R",
       },
       geometry: {
         type: "Point",
