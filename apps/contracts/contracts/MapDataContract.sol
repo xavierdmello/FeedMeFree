@@ -1,98 +1,165 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+import { DAppKitProvider, useWallet, useConnex } from "@vechain/dapp-kit-react";
+import {
+  ChakraProvider,
+  Box,
+  Text,
+  VStack,
+  Heading,
+  Portal,
+} from "@chakra-ui/react";
+import { SubmissionModal, ConnectWalletButton } from "./components";
+import { lightTheme } from "./theme";
+import mapboxgl from "mapbox-gl";
+import { useEffect, useRef, useState } from "react";
+import ReactDOM from "react-dom";
+import { GeolocateControl } from 'mapbox-gl';
+import { config } from "@repo/config-contract";
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-
-contract MapDataContract {
-    ERC20 public b3trToken;
-    // ERC721 public mapNFT;
-
-    struct MapDataPoint {
-        address poster;
-        int256 longitude;
-        int256 latitude;
-        string name;
-        string description;
-        string image;
-        uint256 count;
-        uint256 timePosted;
-    }
-
-    MapDataPoint[] public mapDataPoints;
-    mapping(address => bool) public firstTimeUsers;
-    mapping(address => uint256) public userPostCount;
-    mapping(address => uint256) public userPayments;
-
-    uint256 public constant TOKENS_PER_POST = 10;
-    uint256 public constant TOKENS_TO_VIEW = 2;
-    uint256 public constant POSTS_FOR_NFT = 3;
-
-    constructor() {
-        b3trToken = new B3TRToken();
-        // mapNFT = new MapNFT();
-        b3trToken.transfer(msg.sender, 1000000 * 10**b3trToken.decimals()); // Mint 1,000,000 B3TR tokens to the deployer
-    }
-
-    function postLocation(int256 _long, int256 _lat, string memory _name, string memory _description, string memory _image) public {
-        mapDataPoints.push(MapDataPoint({
-            poster: msg.sender,
-            longitude: _long,
-            latitude: _lat,
-            name: _name,
-            description: _description,
-            image: _image,
-            count: 1,
-            timePosted: block.timestamp
-        }));
-
-        // Mint 10 tokens to the user for posting
-        b3trToken.transfer(msg.sender, TOKENS_PER_POST * 10**b3trToken.decimals());
-
-        userPostCount[msg.sender]++;
-
-        // Mint NFT if user has 3 postings
-        // if (userPostCount[msg.sender] == POSTS_FOR_NFT) {
-        //     _mintNFT(msg.sender);
-        // }
-    }
-
-    function payToView() public {
-        require(b3trToken.balanceOf(msg.sender) >= TOKENS_TO_VIEW * 10**b3trToken.decimals(), "Insufficient tokens to view locations");
-        
-        if (!firstTimeUsers[msg.sender]) {
-            firstTimeUsers[msg.sender] = true;
-        } else {
-            b3trToken.transferFrom(msg.sender, address(this), TOKENS_TO_VIEW * 10**b3trToken.decimals());
-            userPayments[msg.sender] += TOKENS_TO_VIEW;
-        }
-    }
-
-    function getLocations() public view returns (MapDataPoint[] memory, uint256) {
-        require(userPayments[msg.sender] >= TOKENS_TO_VIEW || !firstTimeUsers[msg.sender], "Insufficient payment to view locations");
-        return (mapDataPoints, userPayments[msg.sender]);
-    }
-
-    // function _mintNFT(address recipient) internal {
-    //     _tokenIds.increment();
-    //     uint256 newItemId = _tokenIds.current();
-    //     mapNFT.safeMint(recipient, newItemId);
-    // }
+// Define the MapDataPoint interface
+interface MapDataPoint {
+  poster: string;
+  longitude: number;
+  latitude: number;
+  name: string;
+  description: string;
+  image: string;
+  count: number;
+  timePosted: number;
 }
 
-contract B3TRToken is ERC20 {
-    constructor() ERC20("B3TR", "B3TR") {
-        _mint(msg.sender, 1000000 * 10**decimals());
+const App = () => {
+  const mapContainer = useRef(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const [lng, setLng] = useState(-122.4783);
+  const [lat, setLat] = useState(37.8199);
+  const [zoom, setZoom] = useState(11);
+  const [mapDataPoints, setMapDataPoints] = useState<MapDataPoint[]>([]);
+
+  const { account } = useWallet();
+  const { thor } = useConnex();
+
+  useEffect(() => {
+    if (account) {
+      fetchMapDataPoints();
     }
-}
+  }, [account]);
 
-// contract MapNFT is ERC721 {
-//     using Counters for Counters.Counter;
-//     Counters.Counter private _tokenIds;
+  const fetchMapDataPoints = async () => {
+    if (!thor) return;
 
-//     constructor() ERC721("MapNFT", "MNF") {}
+    const contractABI = {
+      constant: true,
+      inputs: [],
+      name: "getLocations",
+      outputs: [
+        {
+          components: [
+            { name: "poster", type: "address" },
+            { name: "longitude", type: "int256" },
+            { name: "latitude", type: "int256" },
+            { name: "name", type: "string" },
+            { name: "description", type: "string" },
+            { name: "image", type: "string" },
+            { name: "count", type: "uint256" },
+            { name: "timePosted", type: "uint256" },
+          ],
+          name: "",
+          type: "tuple[]",
+        },
+        { name: "", type: "uint256" },
+      ],
+      payable: false,
+      stateMutability: "view",
+      type: "function",
+    };
 
-//     function safeMint(address to, uint256 tokenId) public {
-//         _safeMint(to, tokenId);
-//     }
-// }
+    const method = thor.account(config.CONTRACT_ADDRESS).method(contractABI);
+    const result = await method.call();
+
+    if (result.decoded) {
+      const points: MapDataPoint[] = result.decoded[0].map((point: any) => ({
+        poster: point[0],
+        longitude: parseInt(point[1]) / 1e6,
+        latitude: parseInt(point[2]) / 1e6,
+        name: point[3],
+        description: point[4],
+        image: point[5],
+        count: parseInt(point[6]),
+        timePosted: parseInt(point[7]),
+      }));
+      setMapDataPoints(points);
+    }
+  };
+
+  useEffect(() => {
+    if (map.current) return; // initialize map only once
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current!,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [lng, lat],
+      zoom: zoom
+    });
+
+    map.current.on('move', () => {
+      if (!map.current) return;
+      setLng(parseFloat(map.current.getCenter().lng.toFixed(4)));
+      setLat(parseFloat(map.current.getCenter().lat.toFixed(4)));
+      setZoom(parseFloat(map.current.getZoom().toFixed(2)));
+    });
+
+    const geolocate = new GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true
+      },
+      trackUserLocation: true
+    });
+
+    map.current.addControl(geolocate);
+
+    geolocate.on('geolocate', () => {
+      console.log('A geolocate event has occurred.');
+    });
+
+    return () => {
+      map.current?.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!map.current || mapDataPoints.length === 0) return;
+
+    mapDataPoints.forEach((point) => {
+      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
+        `<h3>${point.name}</h3><p>${point.description}</p>`
+      );
+
+      new mapboxgl.Marker()
+        .setLngLat([point.longitude, point.latitude])
+        .setPopup(popup)
+        .addTo(map.current!);
+    });
+  }, [mapDataPoints]);
+
+  return (
+    <ChakraProvider theme={lightTheme}>
+      <Box>
+        <VStack spacing={4} align="stretch">
+        hii
+          <Box position="absolute" top={4} right={4} zIndex={1}>
+          hi
+            <ConnectWalletButton />
+          </Box>
+          <Box position="absolute" top={4} left={4} zIndex={1} bg="rgba(35, 55, 75, 0.9)" color="white" padding="6px 12px" borderRadius="4px">
+            Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
+          </Box>
+          <Box ref={mapContainer} style={{ width: '100vw', height: '100vh' }} />
+        </VStack>
+        <Portal>
+          <SubmissionModal />
+        </Portal>
+      </Box>
+    </ChakraProvider>
+  );
+};
+
+export default App;

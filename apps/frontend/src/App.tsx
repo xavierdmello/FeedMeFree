@@ -1,4 +1,4 @@
-import { DAppKitProvider } from "@vechain/dapp-kit-react";
+import { DAppKitProvider, useWallet, useConnex } from "@vechain/dapp-kit-react";
 import {
   ChakraProvider,
   Box,
@@ -7,366 +7,25 @@ import {
   Heading,
   Portal,
 } from "@chakra-ui/react";
-import { SubmissionModal } from "./components";
+import { SubmissionModal, ConnectWalletButton } from "./components";
 import { lightTheme } from "./theme";
 import mapboxgl from "mapbox-gl";
 import { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
-import { GeolocateControl } from 'mapbox-gl';
+import { GeolocateControl } from "mapbox-gl";
+import { config } from "@repo/config-contract";
 
-// Sample data points in San Francisco
-const sampleData = [
-  {
-    type: "Feature",
-    properties: {
-      title: "Golden Gate Bridge",
-      description: "Iconic suspension bridge and San Francisco landmark"
-    },
-    geometry: {
-      type: "Point",
-      coordinates: [-122.4783, 37.8199]
-    }
-  },
-  {
-    type: "Feature",
-    properties: {
-      title: "Fisherman's Wharf",
-      description: "Popular waterfront neighborhood and tourist attraction"
-    },
-    geometry: {
-      type: "Point",
-      coordinates: [-122.4169, 37.8080]
-    }
-  },
-  {
-    type: "Feature",
-    properties: {
-      title: "Alcatraz Island",
-      description: "Former prison and now a national historic landmark"
-    },
-    geometry: {
-      type: "Point",
-      coordinates: [-122.4229, 37.8267]
-    }
-  }
-];
-
-const mapDataContractAddress = "0x11a22411c13da184d1c0bf9cc49853978ccdfb5f";
-const mapDataAbi = [
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "spender",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "value",
-        type: "uint256",
-      },
-    ],
-    name: "approve",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    stateMutability: "nonpayable",
-    type: "constructor",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "spender",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "allowance",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "needed",
-        type: "uint256",
-      },
-    ],
-    name: "ERC20InsufficientAllowance",
-    type: "error",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "sender",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "balance",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "needed",
-        type: "uint256",
-      },
-    ],
-    name: "ERC20InsufficientBalance",
-    type: "error",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "approver",
-        type: "address",
-      },
-    ],
-    name: "ERC20InvalidApprover",
-    type: "error",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "receiver",
-        type: "address",
-      },
-    ],
-    name: "ERC20InvalidReceiver",
-    type: "error",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "sender",
-        type: "address",
-      },
-    ],
-    name: "ERC20InvalidSender",
-    type: "error",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "spender",
-        type: "address",
-      },
-    ],
-    name: "ERC20InvalidSpender",
-    type: "error",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "owner",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "spender",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "value",
-        type: "uint256",
-      },
-    ],
-    name: "Approval",
-    type: "event",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "to",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "value",
-        type: "uint256",
-      },
-    ],
-    name: "transfer",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "from",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "to",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "value",
-        type: "uint256",
-      },
-    ],
-    name: "Transfer",
-    type: "event",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "from",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "to",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "value",
-        type: "uint256",
-      },
-    ],
-    name: "transferFrom",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "owner",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "spender",
-        type: "address",
-      },
-    ],
-    name: "allowance",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "account",
-        type: "address",
-      },
-    ],
-    name: "balanceOf",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "decimals",
-    outputs: [
-      {
-        internalType: "uint8",
-        name: "",
-        type: "uint8",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "name",
-    outputs: [
-      {
-        internalType: "string",
-        name: "",
-        type: "string",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "symbol",
-    outputs: [
-      {
-        internalType: "string",
-        name: "",
-        type: "string",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "totalSupply",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-];
+// Define the MapDataPoint interface
+interface MapDataPoint {
+  poster: string;
+  longitude: number;
+  latitude: number;
+  name: string;
+  description: string;
+  image: string;
+  count: number;
+  timePosted: number;
+}
 
 interface PopupProps {
   title: string;
@@ -401,7 +60,7 @@ const Popup: React.FC<PopupProps> = ({ title, description, onClose }) => {
   );
 };
 
-function App() {
+const App = () => {
   mapboxgl.accessToken =
     "pk.eyJ1IjoidGFjb2NhdDQ2NDIiLCJhIjoiY2x5MHU3dGliMHNleTJsb2lheTJqeDdnZiJ9.D0_LMnUu36qWkg6pscuK2Q";
   const mapContainer = useRef<HTMLDivElement | null>(null);
@@ -410,6 +69,63 @@ function App() {
   const [lat, setLat] = useState(37.773972);
   const [zoom, setZoom] = useState(12);
   const [popupInfo, setPopupInfo] = useState<PopupProps | null>(null);
+  const [mapDataPoints, setMapDataPoints] = useState<MapDataPoint[]>([]);
+
+  const { account } = useWallet();
+  const { thor } = useConnex();
+
+  useEffect(() => {
+    if (account) {
+      fetchMapDataPoints();
+    }
+  }, [account]);
+
+  const fetchMapDataPoints = async () => {
+    if (!thor) return;
+
+    const contractABI = {
+      constant: true,
+      inputs: [],
+      name: "getLocations",
+      outputs: [
+        {
+          components: [
+            { name: "poster", type: "address" },
+            { name: "longitude", type: "int256" },
+            { name: "latitude", type: "int256" },
+            { name: "name", type: "string" },
+            { name: "description", type: "string" },
+            { name: "image", type: "string" },
+            { name: "count", type: "uint256" },
+            { name: "timePosted", type: "uint256" },
+          ],
+          name: "",
+          type: "tuple[]",
+        },
+        { name: "", type: "uint256" },
+      ],
+      payable: false,
+      stateMutability: "view",
+      type: "function",
+    };
+
+    const method = thor.account(config.CONTRACT_ADDRESS).method(contractABI);
+    const result = await method.call();
+
+    if (result.decoded) {
+      const points: MapDataPoint[] = result.decoded[0].map((point: any) => ({
+        poster: point[0],
+        longitude: parseInt(point[1]) / 1e6,
+        latitude: parseInt(point[2]) / 1e6,
+        name: point[3],
+        description: point[4],
+        image: point[5],
+        count: parseInt(point[6]),
+        timePosted: parseInt(point[7]),
+      }));
+      setMapDataPoints(points);
+    }
+  };
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return; // initialize map only once and when container is available
@@ -423,10 +139,10 @@ function App() {
     // Add geolocate control to the map
     const geolocate = new GeolocateControl({
       positionOptions: {
-        enableHighAccuracy: true
+        enableHighAccuracy: true,
       },
       trackUserLocation: true,
-      showUserHeading: true
+      showUserHeading: true,
     });
 
     map.current.addControl(geolocate);
@@ -437,20 +153,23 @@ function App() {
       // Trigger geolocation on map load
       geolocate.trigger();
 
-      // Add the sample data as a source
+      // Add the mapDataPoints as a source
       map.current.addSource("places", {
         type: "geojson",
         data: {
           type: "FeatureCollection",
-          features: sampleData.map(feature => ({
+          features: mapDataPoints.map((point) => ({
             type: "Feature",
-            properties: feature.properties,
+            properties: {
+              title: point.name,
+              description: point.description,
+            },
             geometry: {
               type: "Point",
-              coordinates: feature.geometry.coordinates
-            }
-          }))
-        }
+              coordinates: [point.longitude, point.latitude],
+            },
+          })),
+        },
       });
 
       // Add a layer to display the points
@@ -462,21 +181,26 @@ function App() {
           "circle-color": "#4264fb",
           "circle-radius": 8,
           "circle-stroke-width": 2,
-          "circle-stroke-color": "#ffffff"
-        }
+          "circle-stroke-color": "#ffffff",
+        },
       });
 
       // Add click event to show popups
       map.current.on("click", "places", (e) => {
         if (!e.features || e.features.length === 0) return;
         const feature = e.features[0];
-        const coordinates = feature.geometry.type === 'Point' ? feature.geometry.coordinates.slice() : [];
+        const coordinates =
+          feature.geometry.type === "Point"
+            ? feature.geometry.coordinates.slice()
+            : [];
         const title = feature.properties?.title as string | undefined;
-        const description = feature.properties?.description as string | undefined;
+        const description = feature.properties?.description as
+          | string
+          | undefined;
 
         setPopupInfo({
-          title: title || 'Unknown',
-          description: description || '',
+          title: title || "Unknown",
+          description: description || "",
           onClose: () => setPopupInfo(null),
         });
 
@@ -503,71 +227,80 @@ function App() {
         setZoom(Number(map.current.getZoom().toFixed(2)));
       }
     });
-  }, []);
+  }, [mapDataPoints]);
 
   return (
     <ChakraProvider theme={lightTheme}>
-      <DAppKitProvider
-        usePersistence
-        requireCertificate={false}
-        genesis="test"
-        nodeUrl="https://testnet.vechain.org/"
-        logLevel={"DEBUG"}
-      >
-        <Box h={"100vh"} p="20px" margin="0" backgroundColor={"black"}>
+      <Box h={"100vh"} p="20px" margin="0" backgroundColor={"black"}>
+        <Box
+          rounded={"20px"}
+          backgroundColor={"white"}
+          w="50%"
+          h="100%"
+          mx="auto"
+          maxWidth={"800px"}
+          position="relative"
+          overflow="hidden"
+        >
           <Box
-            rounded={"20px"}
-            backgroundColor={"white"}
-            w="50%"
-            h="100%"
-            mx="auto"
-            maxWidth={"800px"}
-            position="relative"
-            overflow="hidden"
+            ref={mapContainer}
+            className="map-container"
+            position="absolute"
+            top="0"
+            bottom="0"
+            left="0"
+            right="0"
+          />
+          <Box
+            position="absolute"
+            top="12px"
+            left="12px"
+            zIndex="1"
+            bg="rgba(35, 55, 75, 0.9)"
+            color="white"
+            p="6px 12px"
+            borderRadius="4px"
+            fontFamily="monospace"
           >
-            <Box 
-              ref={mapContainer} 
-              className="map-container" 
-              position="absolute"
-              top="0"
-              bottom="0"
-              left="0"
-              right="0"
-            />
-            <Box
-              position="absolute"
-              top="12px"
-              left="12px"
-              zIndex="1"
-              bg="rgba(35, 55, 75, 0.9)"
-              color="white"
-              p="6px 12px"
-              borderRadius="4px"
-              fontFamily="monospace"
-            >
-              Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
-            </Box>
+            Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
+          </Box>
+          <Box position="absolute" top={4} right={4} zIndex={1}>
+            <ConnectWalletButton />
           </Box>
         </Box>
+      </Box>
 
-        {popupInfo && (
-          <Portal>
-            <Box
-              position="absolute"
-              top="50%"
-              left="50%"
-              transform="translate(-50%, -100%)"
-              zIndex="tooltip"
-            >
-              <Popup {...popupInfo} />
-            </Box>
-          </Portal>
-        )}
+      {popupInfo && (
+        <Portal>
+          <Box
+            position="absolute"
+            top="50%"
+            left="50%"
+            transform="translate(-50%, -100%)"
+            zIndex="tooltip"
+          >
+            <Popup {...popupInfo} />
+          </Box>
+        </Portal>
+      )}
 
-        <SubmissionModal />
-      </DAppKitProvider>
+      <SubmissionModal />
     </ChakraProvider>
   );
-}
+};
 
-export default App;
+const AppWrapper = () => {
+  return (
+    <DAppKitProvider
+      nodeUrl="https://testnet.vechain.org/"
+      genesis="test"
+      usePersistence={true}
+      logLevel="DEBUG"
+      themeMode="LIGHT"
+    >
+      <App />
+    </DAppKitProvider>
+  );
+};
+
+export default AppWrapper;
