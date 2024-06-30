@@ -12,6 +12,7 @@ import { lightTheme } from "./theme";
 import mapboxgl from "mapbox-gl";
 import { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
+import { GeolocateControl } from 'mapbox-gl';
 
 // Sample data points in San Francisco
 const sampleData = [
@@ -102,8 +103,22 @@ function App() {
       zoom: zoom,
     });
 
+    // Add geolocate control to the map
+    const geolocate = new GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true
+      },
+      trackUserLocation: true,
+      showUserHeading: true
+    });
+
+    map.current.addControl(geolocate);
+
     map.current.on("load", () => {
       if (!map.current) return;
+
+      // Trigger geolocation on map load
+      geolocate.trigger();
 
       // Add the sample data as a source
       map.current.addSource("places", {
