@@ -19,6 +19,43 @@ import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
 import mapboxgl from "mapbox-gl"; // eslint-disable-line import/no-webpack-loader-syntax
 import { useEffect, useRef, useState } from "react";
 
+// Sample data points in San Francisco
+const sampleData = [
+  {
+    type: "Feature",
+    properties: {
+      title: "Golden Gate Bridge",
+      description: "Iconic suspension bridge and San Francisco landmark"
+    },
+    geometry: {
+      type: "Point",
+      coordinates: [-122.4783, 37.8199]
+    }
+  },
+  {
+    type: "Feature",
+    properties: {
+      title: "Fisherman's Wharf",
+      description: "Popular waterfront neighborhood and tourist attraction"
+    },
+    geometry: {
+      type: "Point",
+      coordinates: [-122.4169, 37.8080]
+    }
+  },
+  {
+    type: "Feature",
+    properties: {
+      title: "Alcatraz Island",
+      description: "Former prison and now a national historic landmark"
+    },
+    geometry: {
+      type: "Point",
+      coordinates: [-122.4229, 37.8267]
+    }
+  }
+];
+
 function App() {
   mapboxgl.accessToken =
     "pk.eyJ1IjoidGFjb2NhdDQ2NDIiLCJhIjoiY2x5MHU3dGliMHNleTJsb2lheTJqeDdnZiJ9.D0_LMnUu36qWkg6pscuK2Q";
@@ -37,20 +74,51 @@ function App() {
       zoom: zoom,
     });
 
-    // Add geolocate control to the map
-    const geolocate = new mapboxgl.GeolocateControl({
-      positionOptions: {
-        enableHighAccuracy: true
-      },
-      trackUserLocation: true,
-      showUserHeading: true
-    });
+    map.current.on("load", () => {
+      if (!map.current) return;
 
-    map.current.addControl(geolocate);
+      // Add the sample data as a source
+      map.current.addSource("places", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: sampleData
+        }
+      });
 
-    // Trigger geolocation on map load
-    map.current.on('load', () => {
-      geolocate.trigger();
+      // Add a layer to display the points
+      map.current.addLayer({
+        id: "places",
+        type: "circle",
+        source: "places",
+        paint: {
+          "circle-color": "#4264fb",
+          "circle-radius": 8,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#ffffff"
+        }
+      });
+
+      // Add click event to show popups
+      map.current.on("click", "places", (e) => {
+        if (!e.features || e.features.length === 0) return;
+        const feature = e.features[0];
+        const coordinates = feature.geometry.coordinates.slice();
+        const { title, description } = feature.properties;
+
+        new mapboxgl.Popup()
+          .setLngLat(coordinates)
+          .setHTML(`<h3>${title}</h3><p>${description}</p>`)
+          .addTo(map.current!);
+      });
+
+      // Change cursor on hover
+      map.current.on("mouseenter", "places", () => {
+        if (map.current) map.current.getCanvas().style.cursor = "pointer";
+      });
+      map.current.on("mouseleave", "places", () => {
+        if (map.current) map.current.getCanvas().style.cursor = "";
+      });
     });
 
     map.current.on("move", () => {
