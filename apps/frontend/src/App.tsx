@@ -100,7 +100,6 @@ const App = () => {
         if (ctx) {
           ctx.drawImage(image, 0, 0);
           const base64Image = canvas.toDataURL("image/jpeg");
-          setBase64(base64Image);
         }
       };
 
@@ -141,86 +140,79 @@ const App = () => {
   // Sample data points in San Francisco
   const sampleData = [
     {
-      type: "Feature",
+      type: "Feature" as const,
       properties: {
         title: "Free Burritos",
-        description:
-          "50 leftover burritos at the Golden Gate Bridge\n View address: 5 BT3R",
+        description: "50 leftover burritos at the Golden Gate Bridge\n View address: 5 BT3R",
       },
       geometry: {
-        type: "Point",
+        type: "Point" as const,
         coordinates: [-122.4783, 37.8199],
       },
     },
     {
-      type: "Feature",
+      type: "Feature" as const,
       properties: {
         title: "Leftover salads",
-        description:
-          "Leftover salads at Fisherman's Wharf\n View address: 3 BT3R",
+        description: "Leftover salads at Fisherman's Wharf\n View address: 3 BT3R",
       },
       geometry: {
-        type: "Point",
+        type: "Point" as const,
         coordinates: [-122.4169, 37.808],
       },
     },
     {
-      type: "Feature",
+      type: "Feature" as const,
       properties: {
         title: "Leftover sandwiches",
-        description:
-          "Leftover sandwiches at Alcatraz Island\n View address: 3 BT3R",
+        description: "Leftover sandwiches at Alcatraz Island\n View address: 3 BT3R",
       },
       geometry: {
-        type: "Point",
+        type: "Point" as const,
         coordinates: [-122.4229, 37.8267],
       },
     },
     {
-      type: "Feature",
+      type: "Feature" as const,
       properties: {
         title: "Pizza Leftovers",
-        description:
-          "10 boxes of leftover pizza at Esprit Park\n View address: 3 BT3R",
+        description: "10 boxes of leftover pizza at Esprit Park\n View address: 3 BT3R",
       },
       geometry: {
-        type: "Point",
+        type: "Point" as const,
         coordinates: [-122.3892, 37.7644],
       },
     },
     {
-      type: "Feature",
+      type: "Feature" as const,
       properties: {
         title: "Fruit Basket",
-        description:
-          "Fresh fruit basket at Warm Water Cove Par\n View address: 3 BT3Rk",
+        description: "Fresh fruit basket at Warm Water Cove Par\n View address: 3 BT3Rk",
       },
       geometry: {
-        type: "Point",
+        type: "Point" as const,
         coordinates: [-122.3723, 37.7572],
       },
     },
     {
-      type: "Feature",
+      type: "Feature" as const,
       properties: {
         title: "Bagel Bonanza",
-        description:
-          "Assorted bagels at Minnesota Street Project\n View address: 3 BT3R",
+        description: "Assorted bagels at Minnesota Street Project\n View address: 3 BT3R",
       },
       geometry: {
-        type: "Point",
+        type: "Point" as const,
         coordinates: [-122.3895, 37.7587],
       },
     },
     {
-      type: "Feature",
+      type: "Feature" as const,
       properties: {
         title: "Veggie Platter",
-        description:
-          "Large vegetable platter at Crane Cove Park\n View address: 3 BT3R",
+        description: "Large vegetable platter at Crane Cove Park\n View address: 3 BT3R",
       },
       geometry: {
-        type: "Point",
+        type: "Point" as const,
         coordinates: [-122.3841, 37.7644],
       },
     },
@@ -290,35 +282,35 @@ const App = () => {
     // Sample data points in San Francisco
     const sampleData = [
       {
-        type: "Feature",
+        type: "Feature" as const,
         properties: {
           title: "Golden Gate Bridge",
           description: "Iconic suspension bridge and San Francisco landmark",
         },
         geometry: {
-          type: "Point",
+          type: "Point" as const,
           coordinates: [-122.4783, 37.8199],
         },
       },
       {
-        type: "Feature",
+        type: "Feature" as const,
         properties: {
           title: "Fisherman's Wharf",
           description: "Popular waterfront neighborhood and tourist attraction",
         },
         geometry: {
-          type: "Point",
+          type: "Point" as const,
           coordinates: [-122.4169, 37.808],
         },
       },
       {
-        type: "Feature",
+        type: "Feature" as const,
         properties: {
           title: "Alcatraz Island",
           description: "Former prison and now a national historic landmark",
         },
         geometry: {
-          type: "Point",
+          type: "Point" as const,
           coordinates: [-122.4229, 37.8267],
         },
       },
@@ -376,57 +368,57 @@ const App = () => {
     }
   };
 
-  const handlePostLocation = async () => {
-    if (!thor || !account) {
-      console.error("Thor or account not available");
-      return;
-    }
+  // const handlePostLocation = async () => {
+  //   if (!thor || !account) {
+  //     console.error("Thor or account not available");
+  //     return;
+  //   }
 
-    try {
-      setError("");
+  //   try {
+  //     setError("");
 
-      const clauses = [
-        clauseBuilder.functionInteraction(
-          config.CONTRACT_ADDRESS,
-          {
-            inputs: [
-              { name: "_long", type: "int256" },
-              { name: "_lat", type: "int256" },
-              { name: "_name", type: "string" },
-              { name: "_description", type: "string" },
-              { name: "_image", type: "string" },
-            ],
-            name: "postLocation",
-            outputs: [],
-            stateMutability: "nonpayable",
-            type: "function",
-          },
-          [
-            Math.round(parseFloat(newLong) * 1e6),
-            Math.round(parseFloat(newLat) * 1e6),
-            newName,
-            newDescription,
-            newImage,
-          ]
-        ),
-      ];
+  //     const clauses = [
+  //       clauseBuilder.functionInteraction(
+  //         config.CONTRACT_ADDRESS,
+  //         {
+  //           inputs: [
+  //             { name: "_long", type: "int256" },
+  //             { name: "_lat", type: "int256" },
+  //             { name: "_name", type: "string" },
+  //             { name: "_description", type: "string" },
+  //             { name: "_image", type: "string" },
+  //           ],
+  //           name: "postLocation",
+  //           outputs: [],
+  //           stateMutability: "nonpayable",
+  //           type: "function",
+  //         },
+  //         [
+  //           Math.round(parseFloat(newLong) * 1e6),
+  //           Math.round(parseFloat(newLat) * 1e6),
+  //           newName,
+  //           newDescription,
+  //           newImage,
+  //         ]
+  //       ),
+  //     ];
 
-      const tx = thor.vendor.sign("tx", clauses).signer(account);
+  //     const tx = thor.vendor.sign("tx", clauses).signer(account);
 
-      const { txid } = await tx.request();
-      setTxId(txid);
+  //     const { txid } = await tx.request();
+  //     setTxId(txid);
 
-      // Wait for the transaction to be confirmed
-      const receipt = await thor.transaction(txid).getReceipt();
-      console.log("Transaction confirmed:", receipt);
+  //     // Wait for the transaction to be confirmed
+  //     const receipt = await thor.transaction(txid).getReceipt();
+  //     console.log("Transaction confirmed:", receipt);
 
-      // Refresh map data points after successful transaction
-      await fetchMapDataPoints();
-    } catch (err) {
-      setError(String(err));
-      console.error("Error posting location:", err);
-    }
-  };
+  //     // Refresh map data points after successful transaction
+  //     await fetchMapDataPoints();
+  //   } catch (err) {
+  //     setError(String(err));
+  //     console.error("Error posting location:", err);
+  //   }
+  // };
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return; // initialize map only once and when container is available
@@ -466,20 +458,22 @@ const App = () => {
       map.current.on("click", "places", (e) => {
         if (!e.features || e.features.length === 0) return;
         const feature = e.features[0];
-        const coordinates = feature.geometry.coordinates.slice();
-        const { title, description } = feature.properties;
+        if (feature.geometry.type === "Point") {
+          const coordinates = feature.geometry.coordinates.slice();
+          const { title, description } = feature.properties as { title: string; description: string };
 
-        setPopupInfo({
-          title,
-          description,
-          onClose: () => setPopupInfo(null),
-        });
+          setPopupInfo({
+            title,
+            description,
+            onClose: () => setPopupInfo(null),
+          });
 
-        // Ensure the popup is positioned correctly
-        map.current!.flyTo({
-          center: coordinates as [number, number],
-          zoom: 14,
-        });
+          // Ensure the popup is positioned correctly
+          map.current!.flyTo({
+            center: coordinates as [number, number],
+            zoom: 14,
+          });
+        }
       });
 
       // Change cursor on hover
