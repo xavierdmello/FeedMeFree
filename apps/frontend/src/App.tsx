@@ -111,6 +111,7 @@ const App = () => {
 
     const method = thor.account(config.CONTRACT_ADDRESS).method(contractABI);
     const result = await method.call();
+    console.log("Result: ", result);
 
     if (result.decoded) {
       const points: MapDataPoint[] = result.decoded[0].map((point: any) => ({
