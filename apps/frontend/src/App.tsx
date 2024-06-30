@@ -143,8 +143,8 @@ const App = () => {
     {
       type: "Feature",
       properties: {
-        title: "Golden Gate Bridge",
-        description: "Iconic suspension bridge and San Francisco landmark",
+        title: "Free Burritos",
+        description: "50 leftover burritos at the Golden Gate Bridge",
       },
       geometry: {
         type: "Point",
@@ -154,8 +154,8 @@ const App = () => {
     {
       type: "Feature",
       properties: {
-        title: "Fisherman's Wharf",
-        description: "Popular waterfront neighborhood and tourist attraction",
+        title: "Leftover salads",
+        description: "Leftover salads at Fisherman's Wharf",
       },
       geometry: {
         type: "Point",
@@ -165,12 +165,56 @@ const App = () => {
     {
       type: "Feature",
       properties: {
-        title: "Alcatraz Island",
-        description: "Former prison and now a national historic landmark",
+        title: "Leftover sandwiches",
+        description: "Leftover sandwiches at Alcatraz Island",
       },
       geometry: {
         type: "Point",
         coordinates: [-122.4229, 37.8267],
+      },
+    },
+    {
+      type: "Feature",
+      properties: {
+        title: "Pizza Leftovers",
+        description: "10 boxes of leftover pizza at Esprit Park",
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [-122.3892, 37.7644],
+      },
+    },
+    {
+      type: "Feature",
+      properties: {
+        title: "Fruit Basket",
+        description: "Fresh fruit basket at Warm Water Cove Park",
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [-122.3723, 37.7572],
+      },
+    },
+    {
+      type: "Feature",
+      properties: {
+        title: "Bagel Bonanza",
+        description: "Assorted bagels at Minnesota Street Project",
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [-122.3895, 37.7587],
+      },
+    },
+    {
+      type: "Feature",
+      properties: {
+        title: "Veggie Platter",
+        description: "Large vegetable platter at Crane Cove Park",
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [-122.3841, 37.7644],
       },
     },
   ];
