@@ -76,6 +76,7 @@ const App = () => {
   const [popupInfo, setPopupInfo] = useState<PopupProps | null>(null);
   const [mapDataPoints, setMapDataPoints] = useState<MapDataPoint[]>([]);
 
+
   // New state variables for the input fields
   const [newLong, setNewLong] = useState("");
   const [newLat, setNewLat] = useState("");
