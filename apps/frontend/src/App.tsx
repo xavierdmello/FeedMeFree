@@ -24,9 +24,9 @@ function App() {
     "pk.eyJ1IjoidGFjb2NhdDQ2NDIiLCJhIjoiY2x5MHU3dGliMHNleTJsb2lheTJqeDdnZiJ9.D0_LMnUu36qWkg6pscuK2Q";
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [lng, setLng] = useState(-70.9);
-  const [lat, setLat] = useState(42.35);
-  const [zoom, setZoom] = useState(9);
+  const [lng, setLng] = useState(-122.431297);
+  const [lat, setLat] = useState(37.773972);
+  const [zoom, setZoom] = useState(12);
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return; // initialize map only once and when container is available
@@ -36,7 +36,31 @@ function App() {
       center: [lng, lat],
       zoom: zoom,
     });
-  });
+
+    // Add geolocate control to the map
+    const geolocate = new mapboxgl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true
+      },
+      trackUserLocation: true,
+      showUserHeading: true
+    });
+
+    map.current.addControl(geolocate);
+
+    // Trigger geolocation on map load
+    map.current.on('load', () => {
+      geolocate.trigger();
+    });
+
+    map.current.on("move", () => {
+      if (map.current) {
+        setLng(Number(map.current.getCenter().lng.toFixed(4)));
+        setLat(Number(map.current.getCenter().lat.toFixed(4)));
+        setZoom(Number(map.current.getZoom().toFixed(2)));
+      }
+    });
+  }, []);
 
   return (
     <ChakraProvider theme={lightTheme}>
@@ -68,6 +92,19 @@ function App() {
               left="0"
               right="0"
             />
+            <Box
+              position="absolute"
+              top="12px"
+              left="12px"
+              zIndex="1"
+              bg="rgba(35, 55, 75, 0.9)"
+              color="white"
+              p="6px 12px"
+              borderRadius="4px"
+              fontFamily="monospace"
+            >
+              Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
+            </Box>
           </Box>
         </Box>
 
