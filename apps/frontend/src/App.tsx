@@ -125,7 +125,14 @@ function App() {
         type: "geojson",
         data: {
           type: "FeatureCollection",
-          features: sampleData
+          features: sampleData.map(feature => ({
+            type: "Feature",
+            properties: feature.properties,
+            geometry: {
+              type: "Point",
+              coordinates: feature.geometry.coordinates
+            }
+          }))
         }
       });
 
@@ -146,12 +153,13 @@ function App() {
       map.current.on("click", "places", (e) => {
         if (!e.features || e.features.length === 0) return;
         const feature = e.features[0];
-        const coordinates = feature.geometry.coordinates.slice();
-        const { title, description } = feature.properties;
+        const coordinates = feature.geometry.type === 'Point' ? feature.geometry.coordinates.slice() : [];
+        const title = feature.properties?.title as string | undefined;
+        const description = feature.properties?.description as string | undefined;
 
         setPopupInfo({
-          title,
-          description,
+          title: title || 'Unknown',
+          description: description || '',
           onClose: () => setPopupInfo(null),
         });
 
